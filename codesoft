@@ -1,0 +1,42 @@
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder, StandardScaler
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
+from xgboost import XGBClassifier
+from sklearn.metrics import classification_report
+# Load dataset
+df = pd.read_csv("Churn_Modelling.csv")
+
+# Drop unnecessary columns
+df = df.drop(['RowNumber', 'CustomerId', 'Surname'], axis=1)
+
+# Encode categorical variables
+df['Gender'] = LabelEncoder().fit_transform(df['Gender'])  # Male:1, Female:0
+df = pd.get_dummies(df, columns=['Geography'], drop_first=True)  # France as base
+
+# Define features and target
+X = df.drop('Exited', axis=1)
+y = df['Exited']
+
+# Scale numerical features
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+
+# Train-Test Split
+X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, random_state=42)
+# Initialize models
+models = {
+    'Logistic Regression': LogisticRegression(max_iter=1000, random_state=42),
+    'Random Forest': RandomForestClassifier(n_estimators=100, random_state=42),
+    'XGBoost': XGBClassifier(use_label_encoder=False, eval_metric='logloss', random_state=42)
+}
+
+# Train and evaluate
+for name, model in models.items():
+    model.fit(X_train, y_train)
+    y_pred = model.predict(X_test)
+    print(f"\n{name} Results:\n")
+    print(classification_report(y_test, y_pred))
+
